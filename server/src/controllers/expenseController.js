@@ -44,23 +44,67 @@ exports.createExpense = async (req, res) => {
  */
 exports.getExpenses = async (req, res) => {
     try {
-        // Fetch all expenses
-        const expenses = await Expense.find();
+        // -----------------------------
+        // 1. Filtering Logic
+        // -----------------------------
+        
+        let query = {}; // Base query object
 
-        // Respond with the list of expenses and 200 status
+        // Check for 'category' query parameter
+        if (req.query.category) {
+            // Case-insensitive exact match filtering
+            query.category = req.query.category;
+        }
+        
+        // You can extend 'query' here for other fields like description (using regex)
+
+        // -----------------------------
+        // 2. Pagination Logic
+        // -----------------------------
+        
+        // Parse pagination parameters, setting defaults
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 5;
+        const startIndex = (page - 1) * limit;
+
+        // Calculate total documents matching the filter criteria
+        const totalCount = await Expense.countDocuments(query);
+        const totalPages = Math.ceil(totalCount / limit);
+
+        // Fetch expenses applying filter, skip, and limit
+        const expenses = await Expense.find(query)
+            .skip(startIndex)
+            .limit(limit)
+            .sort({ createdAt: -1 }); // Optional: sort by newest first
+
+        // -----------------------------
+        // 3. Response Structure
+        // -----------------------------
+
+        // Pagination result object for the response
+        const pagination = {
+            currentPage: page,
+            limit: limit,
+            totalCount: totalCount,
+            totalPages: totalPages,
+        };
+
+        // Respond with the list of expenses, count, and pagination details
         res.status(200).json({
             success: true,
-            count: expenses.length,
+            ...pagination, // Spread the pagination details into the root object
             data: expenses
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            success: false, 
-            error: 'Server Error' 
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            error: 'Server Error during fetching expenses'
         });
     }
 };
+
 
 
 /**
