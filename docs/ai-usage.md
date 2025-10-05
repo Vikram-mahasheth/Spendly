@@ -337,7 +337,7 @@ If you don't want to install colors, just remove the .cyan.underline.bold and .r
     "Gemini, please create a Mongoose schema and model for an 'Expense'. This code should go in a new file at `src/models/Expense.js`. The schema must include the following fields as required by my project: - `description`: A Text field... - `category`: An Enum field... - `isReimbursable`: A Boolean field... - `baseAmount`: A required Number... - `taxAmount`: A required Number... Please also include Mongoose's built-in timestamps."
 
 * **Context:**
-    This prompt directly addresses the project requirement for a data model with specific field types (Text, Enum, Boolean)[cite: 2]. The goal was to create the Mongoose schema that will serve as the foundation for all CRUD operations related to expenses.
+    This prompt directly addresses the project requirement for a data model with specific field types (Text, Enum, Boolean). The goal was to create the Mongoose schema that will serve as the foundation for all CRUD operations related to expenses.
 
 * **Response from Gemini:**
     This code defines the Mongoose schema and model for your `Expense` object, ensuring all specified constraints, required fields, and the use of timestamps are implemented.
@@ -428,7 +428,7 @@ module.exports = Expense;
 ```
 
 * **Implementation & Changes:**
-    The code was implemented exactly as provided in a new `src/models/Expense.js` file[cite: 2]. The AI did an excellent job, not only by including all the required fields but also by adding helpful validations like `trim` and `min: 0`. Most importantly, it suggested and included a Mongoose **virtual property** called `totalAmount`[cite: 2]. This is a perfect and efficient way to implement the "calculated field" requirement from the PDF, as it calculates the value on the fly without storing redundant data in the database. I will be using this virtual property when I build the API endpoints.
+    The code was implemented exactly as provided in a new `src/models/Expense.js` file. The AI did an excellent job, not only by including all the required fields but also by adding helpful validations like `trim` and `min: 0`. Most importantly, it suggested and included a Mongoose **virtual property** called `totalAmount`. This is a perfect and efficient way to implement the "calculated field" requirement from the PDF, as it calculates the value on the fly without storing redundant data in the database. I will be using this virtual property when I build the API endpoints.
 
 
 
@@ -2137,3 +2137,73 @@ export const deleteExpense = async (id, token) => {
 
 
 
+## Final Feature Addition: Advanced Backend Queries (Pagination, Filter, Search)
+
+* **Prompt 15:**
+    ---
+
+## Final Feature Addition: Advanced Backend Queries (Pagination, Filter, Search)
+
+* **Prompt:**
+    (This was a multi-step refactoring of the `getExpenses` controller)
+    1. **For Pagination & Filter:** "Hey Gemini, I need to refactor my `getExpenses` function to add filtering by `category` and pagination using `page` and `limit`..."
+    2. **For Search:** "Now, please modify that same `getExpenses` function to also handle a `search` query parameter. It should perform a case-insensitive search on the `description` field."
+
+* **Context:**
+    This was to implement the final core backend requirements for "Pagination" and "At least one useful filter" , as well as the bonus "Search functionality". The goal was to make the main data-fetching endpoint (`getExpenses`) powerful and flexible enough to support the full-featured UI.
+
+* **Response from Gemini:**
+    ```javascript
+    // The final, complete getExpenses function in src/controllers/expenseController.js
+
+    exports.getExpenses = async (req, res) => {
+        try {
+            // 1. Filtering Logic
+            // Base query is now scoped to the logged-in user
+            let query = { user: req.user._id };
+
+            // Check for 'category' query parameter
+            if (req.query.category) {
+                query.category = req.query.category;
+            }
+
+            // Check for 'search' query parameter
+            if (req.query.search) {
+                query.description = { $regex: req.query.search, $options: 'i' };
+            }
+
+            // 2. Pagination Logic
+            const page = parseInt(req.query.page, 10) || 1;
+            const limit = parseInt(req.query.limit, 10) || 5;
+            const startIndex = (page - 1) * limit;
+
+            const totalCount = await Expense.countDocuments(query);
+            const totalPages = Math.ceil(totalCount / limit);
+
+            // Fetch expenses applying filter, sorting, skipping, and limiting
+            const expenses = await Expense.find(query)
+                .sort({ createdAt: -1 }) // Sort by newest first
+                .skip(startIndex)
+                .limit(limit);
+
+            // 3. Response Structure
+            res.status(200).json({
+                success: true,
+                currentPage: page,
+                totalPages: totalPages,
+                totalCount: totalCount,
+                data: expenses
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                error: 'Server Error during fetching expenses'
+            });
+        }
+    };
+    ```
+
+* **Implementation & Changes:**
+    I refactored the `getExpenses` controller function significantly. It now dynamically builds a MongoDB query object based on the query parameters provided in the URL (`category`, `search`). It also performs the necessary calculations to `skip` and `limit` results for pagination and returns a comprehensive JSON object with pagination details. This makes the backend API very robust and feature-complete.

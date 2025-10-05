@@ -1,12 +1,15 @@
 // src/pages/DashboardPage.jsx
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { fetchExpenses, createExpense, updateExpense, deleteExpense } from '../services/api';
 import ExpenseForm from '../components/ExpenseForm';
+import useDebounce from '../hooks/useDebounce';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
+    const navigate = useNavigate();
     const { user, token, logout } = useAuth();
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,33 +18,22 @@ const DashboardPage = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [editingExpense, setEditingExpense] = useState(null);
 
-    // State for pagination
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const PAGE_LIMIT = 5;
 
-    // --- 1. NEW STATE FOR FILTERING ---
-    const [filterCategory, setFilterCategory] = useState(''); // Empty string means 'All'
+    const [filterCategory, setFilterCategory] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-
-    // Reusable function to load expenses
     const loadExpenses = async () => {
-        if (!token) {
-            setLoading(false);
-            setError("Authentication token not found. Please log in.");
-            return;
-        }
+        if (!token) { setLoading(false); setError("Authentication token not found."); return; }
         setLoading(true);
         setError(null);
         try {
-            // Build the params object for the API call
-            const params = {
-                page: currentPage,
-                limit: PAGE_LIMIT,
-            };
-            if (filterCategory) {
-                params.category = filterCategory;
-            }
+            const params = { page: currentPage, limit: PAGE_LIMIT };
+            if (filterCategory) params.category = filterCategory;
+            if (debouncedSearchTerm) params.search = debouncedSearchTerm; // <-- THE FIX IS HERE
 
             const response = await fetchExpenses(token, params);
             setExpenses(response.data);
@@ -50,32 +42,26 @@ const DashboardPage = () => {
                 totalPages: response.totalPages,
                 totalCount: response.totalCount
             });
-        }
-         catch (err) {
+        } catch (err) {
             console.error('Error fetching expenses:', err);
-            const errorMessage = err.message || 'Failed to load expense data.';
-            setError(errorMessage);
+            setError(err.message || 'Failed to load expense data.');
         } finally {
             setLoading(false);
         }
     };
 
-    // Effect to load data on initial render or when page changes
     useEffect(() => {
         loadExpenses();
-    }, [token, currentPage,filterCategory]);
+    }, [token, currentPage, filterCategory, debouncedSearchTerm]);
 
-    // Handler for creating a new expense
     const handleCreateExpense = async (formData) => {
         try {
             await createExpense(formData, token);
-            setCurrentPage(1); // Go back to the first page to see the new item
-            loadExpenses();
+            if (currentPage !== 1) setCurrentPage(1); else loadExpenses();
             setIsCreating(false);
         } catch (err) { setError("Failed to create expense."); }
     };
     
-    // Handler for updating an expense
     const handleUpdateExpense = async (formData) => {
         try {
             await updateExpense(editingExpense._id, formData, token);
@@ -84,12 +70,10 @@ const DashboardPage = () => {
         } catch (err) { setError("Failed to update expense."); }
     };
 
-    // Handler for deleting an expense
     const handleDeleteExpense = async (id) => {
         if (window.confirm("Are you sure you want to delete this expense?")) {
             try {
                 await deleteExpense(id, token);
-                // If we delete the last item on a page, go to the previous page
                 if (expenses.length === 1 && currentPage > 1) {
                     setCurrentPage(currentPage - 1);
                 } else {
@@ -98,24 +82,20 @@ const DashboardPage = () => {
             } catch (err) { setError("Failed to delete expense."); }
         }
     };
+     const handleLogout = () => {
+        logout(); // This clears the user state and localStorage
+        navigate('/login'); // This redirects the user to the login page
+    };
 
-    if (loading) {
-        return <div className="container"><h2>Loading expenses...</h2></div>;
-    }
-
-    if (error) {
-        return <div className="container"><h2 className="error">Error: {error}</h2></div>;
-    }
-    
-    if (!user) {
-        return <div className="container"><h2>Please log in to view the dashboard.</h2></div>;
-    }
+    if (loading) { return <div className="container"><h2>Loading expenses...</h2></div>; }
+    if (error) { return <div className="container"><h2 className="error">Error: {error}</h2></div>; }
+    if (!user) { return <div className="container"><h2>Please log in to view the dashboard.</h2></div>; }
 
     return (
         <div className="container">
             <div className="header">
                 <h1>Welcome, {user.username}!</h1>
-                <button onClick={logout} className="logout-button">Logout</button>
+                <button onClick={handleLogout} className="logout-button">Logout</button>
             </div>
             <hr className="divider" />
             
@@ -125,19 +105,11 @@ const DashboardPage = () => {
                         {isCreating ? 'Cancel' : 'Add New Expense'}
                     </button>
                 )}
-                
-                {isCreating && !editingExpense && (
-                    <ExpenseForm onSubmit={handleCreateExpense} buttonText="Add Expense" />
-                )}
-
+                {isCreating && !editingExpense && <ExpenseForm onSubmit={handleCreateExpense} buttonText="Add Expense" />}
                 {editingExpense && (
                     <div className="edit-form-container">
                         <h3>Edit Expense</h3>
-                        <ExpenseForm 
-                            onSubmit={handleUpdateExpense} 
-                            buttonText="Update Expense"
-                            initialData={editingExpense}
-                        />
+                        <ExpenseForm onSubmit={handleUpdateExpense} buttonText="Update Expense" initialData={editingExpense} />
                         <button onClick={() => setEditingExpense(null)} className="button-cancel-edit">Cancel Edit</button>
                     </div>
                 )}
@@ -145,29 +117,40 @@ const DashboardPage = () => {
 
             <div className="list-header">
                 <h3>Your Expenses ({pagination ? pagination.totalCount : 0})</h3>
-                <div className="filter-controls">
-                    <label htmlFor="category-filter">Filter by Category:</label>
-                    <select 
-                        id="category-filter"
-                        value={filterCategory}
-                        onChange={(e) => {
-                            setFilterCategory(e.target.value);
-                            setCurrentPage(1); // Reset to page 1 when filter changes
-                        }}
-                    >
-                        <option value="">All Categories</option>
-                        <option value="Food">Food</option>
-                        <option value="Travel">Travel</option>
-                        <option value="Office Supplies">Office Supplies</option>
-                        <option value="Other">Other</option>
-                    </select>
+                <div className="controls-group">
+                    <div className="search-controls">
+                        <input 
+                            type="search"
+                            placeholder="Search descriptions..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
+                    </div>
+                    <div className="filter-controls">
+                        <label htmlFor="category-filter">Filter:</label>
+                        <select 
+                            id="category-filter"
+                            value={filterCategory}
+                            onChange={(e) => {
+                                setFilterCategory(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <option value="">All</option>
+                            <option value="Food">Food</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-
-            <h3>Your Expenses ({pagination ? pagination.totalCount : 0})</h3>
             
-            {expenses.length === 0 && !isCreating ? (
-                <p>You have no expenses recorded yet. Click "Add New Expense" to start.</p>
+            {expenses.length === 0 ? (
+                <p>No expenses found. Try adjusting your search or filter.</p>
             ) : (
                 <ul className="expense-list">
                     {expenses.map((expense) => (
@@ -190,21 +173,9 @@ const DashboardPage = () => {
 
             {pagination && pagination.totalPages > 1 && (
                 <div className="pagination-controls">
-                    <button 
-                        onClick={() => setCurrentPage(currentPage - 1)} 
-                        disabled={currentPage === 1}
-                    >
-                        Previous
-                    </button>
-                    <span>
-                        Page {pagination.currentPage} of {pagination.totalPages}
-                    </span>
-                    <button 
-                        onClick={() => setCurrentPage(currentPage + 1)} 
-                        disabled={currentPage === pagination.totalPages}
-                    >
-                        Next
-                    </button>
+                    <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
+                    <span>Page {pagination.currentPage} of {pagination.totalPages}</span>
+                    <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === pagination.totalPages}>Next</button>
                 </div>
             )}
         </div>

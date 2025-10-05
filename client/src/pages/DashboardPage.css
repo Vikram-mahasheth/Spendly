@@ -83,6 +83,40 @@
     cursor: pointer;
 }
 
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.controls-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.search-controls input {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    min-width: 200px;
+}
+
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-controls select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
 .expense-list {
     list-style: none;
     padding: 0;
@@ -192,24 +226,4 @@
     border-color: #ccc;
     color: #ccc;
     cursor: not-allowed;
-}
-
-/* Add this to the end of DashboardPage.css */
-.list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-}
-
-.filter-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-controls select {
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
 }

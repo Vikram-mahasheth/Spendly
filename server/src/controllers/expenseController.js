@@ -56,7 +56,10 @@ exports.getExpenses = async (req, res) => {
             // Case-insensitive exact match filtering
             query.category = req.query.category;
         }
-        
+        if (req.query.search) {
+    // Use a case-insensitive regex to search the description field
+    query.description = { $regex: req.query.search, $options: 'i' };
+      }
         // You can extend 'query' here for other fields like description (using regex)
 
         // -----------------------------

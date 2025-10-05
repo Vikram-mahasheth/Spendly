@@ -1,42 +1,32 @@
-// client/src/pages/LoginPage.jsx
+// src/pages/RegisterPage.jsx
 
-import React, { useState } from 'react'; // <-- We do NOT import useContext
-import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../services/api';
-import { useAuth } from '../context/AuthContext.jsx'; // <-- CORRECT: We import the custom hook
-import './LoginPage.css';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { registerUser } from '../services/api';
+import './RegisterPage.css'; // Import the new CSS
 
-
-const LoginPage = () => {
+const RegisterPage = () => {
     const navigate = useNavigate();
-    const { login } = useAuth(); // <-- CORRECT: We call the custom hook to get the login function
-    
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(false);
 
-    const handleLogin = async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         setError(null);
+        setSuccess(false);
         setLoading(true);
 
         try {
-            const response = await loginUser({ username, password });
-    
-    // The entire response.data object IS the user data, plus the token.
-    // We can separate them like this:
-    const { token, ...userData } = response.data; 
-
-    // Now, pass the correct data to the login function
-    login(userData, token);
-    
-    // And then navigate
-    navigate('/');
-
+            await registerUser({ username, password });
+            setSuccess(true);
+            setTimeout(() => {
+                navigate('/login');
+            }, 1500); // Wait 1.5 seconds before redirecting
         } catch (err) {
-            const errorMessage = err.message || 'An unknown error occurred during login.';
+            const errorMessage = err.message || 'Registration failed. Please try again.';
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -45,11 +35,12 @@ const LoginPage = () => {
 
     return (
         <div className="container">
-            <h2>User Login</h2>
+            <h2>User Registration</h2>
             
             {error && <p className="error">{error}</p>}
+            {success && <p className="success">Registration successful! Redirecting to login...</p>}
 
-            <form onSubmit={handleLogin} className="form">
+            <form onSubmit={handleRegister} className="form">
                 <div className="form-group">
                     <label htmlFor="username">Username:</label>
                     <input
@@ -58,7 +49,7 @@ const LoginPage = () => {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
-                        disabled={loading}
+                        disabled={loading || success}
                     />
                 </div>
 
@@ -70,23 +61,24 @@ const LoginPage = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        disabled={loading}
+                        disabled={loading || success}
                     />
                 </div>
 
                 <button 
                     type="submit" 
-                    disabled={loading} 
+                    disabled={loading || success} 
                     className="button"
                 >
-                    {loading ? 'Logging in...' : 'Login'}
+                    {loading ? 'Registering...' : 'Register'}
                 </button>
             </form>
-            <p className="auth-link">
-    Don't have an account? <Link to="/register">Register</Link>
-</p>
+            
+            <div className="link-container">
+                <Link to="/login" className="auth-link">Already have an account? Login</Link>
+            </div>
         </div>
     );
 };
 
-export default LoginPage;
+export default RegisterPage;
