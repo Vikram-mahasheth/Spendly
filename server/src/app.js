@@ -7,6 +7,12 @@
 // Import the Express framework
 const express = require('express');
 
+const connectDB = require('./config/database');
+
+// Connect to the database
+connectDB();
+
+
 // Import dotenv to load environment variables from the .env file
 require('dotenv').config();
 
