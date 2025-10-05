@@ -12,43 +12,66 @@ const DashboardPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // State for managing which form to show
     const [isCreating, setIsCreating] = useState(false);
-    const [editingExpense, setEditingExpense] = useState(null); // Will hold the expense being edited
+    const [editingExpense, setEditingExpense] = useState(null);
 
-    // Function to load expenses, reusable
+    // State for pagination
+    const [pagination, setPagination] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_LIMIT = 5;
+
+    // --- 1. NEW STATE FOR FILTERING ---
+    const [filterCategory, setFilterCategory] = useState(''); // Empty string means 'All'
+
+
+    // Reusable function to load expenses
     const loadExpenses = async () => {
         if (!token) {
             setLoading(false);
             setError("Authentication token not found. Please log in.");
             return;
         }
-        // Don't show main loading screen on re-fetch, just let UI update
-        // setLoading(true); 
+        setLoading(true);
         setError(null);
         try {
-            const response = await fetchExpenses(token);
+            // Build the params object for the API call
+            const params = {
+                page: currentPage,
+                limit: PAGE_LIMIT,
+            };
+            if (filterCategory) {
+                params.category = filterCategory;
+            }
+
+            const response = await fetchExpenses(token, params);
             setExpenses(response.data);
-        } catch (err) {
+            setPagination({
+                currentPage: response.currentPage,
+                totalPages: response.totalPages,
+                totalCount: response.totalCount
+            });
+        }
+         catch (err) {
             console.error('Error fetching expenses:', err);
             const errorMessage = err.message || 'Failed to load expense data.';
             setError(errorMessage);
         } finally {
-            setLoading(false); // Only set loading false on initial load
+            setLoading(false);
         }
     };
 
-    // Initial load effect
+    // Effect to load data on initial render or when page changes
     useEffect(() => {
         loadExpenses();
-    }, [token]);
+    }, [token, currentPage,filterCategory]);
 
     // Handler for creating a new expense
     const handleCreateExpense = async (formData) => {
         try {
             await createExpense(formData, token);
-            loadExpenses(); // Refresh the list
-            setIsCreating(false); // Hide form on success
+            setCurrentPage(1); // Go back to the first page to see the new item
+            loadExpenses();
+            setIsCreating(false);
         } catch (err) { setError("Failed to create expense."); }
     };
     
@@ -56,8 +79,8 @@ const DashboardPage = () => {
     const handleUpdateExpense = async (formData) => {
         try {
             await updateExpense(editingExpense._id, formData, token);
-            loadExpenses(); // Refresh the list
-            setEditingExpense(null); // Hide form on success
+            loadExpenses();
+            setEditingExpense(null);
         } catch (err) { setError("Failed to update expense."); }
     };
 
@@ -66,7 +89,12 @@ const DashboardPage = () => {
         if (window.confirm("Are you sure you want to delete this expense?")) {
             try {
                 await deleteExpense(id, token);
-                loadExpenses(); // Refresh the list
+                // If we delete the last item on a page, go to the previous page
+                if (expenses.length === 1 && currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                } else {
+                    loadExpenses();
+                }
             } catch (err) { setError("Failed to delete expense."); }
         }
     };
@@ -92,33 +120,52 @@ const DashboardPage = () => {
             <hr className="divider" />
             
             <div className="add-expense-section">
-                {/* Only show the 'Add' button if we are not currently editing another expense */}
                 {!editingExpense && (
                     <button onClick={() => setIsCreating(!isCreating)} className="button-toggle-form">
                         {isCreating ? 'Cancel' : 'Add New Expense'}
                     </button>
                 )}
                 
-                {/* Show the CREATE form if isCreating is true and we're not editing */}
                 {isCreating && !editingExpense && (
                     <ExpenseForm onSubmit={handleCreateExpense} buttonText="Add Expense" />
                 )}
 
-                {/* Show the UPDATE form if an expense has been selected for editing */}
                 {editingExpense && (
                     <div className="edit-form-container">
                         <h3>Edit Expense</h3>
                         <ExpenseForm 
                             onSubmit={handleUpdateExpense} 
                             buttonText="Update Expense"
-                            initialData={editingExpense} // This pre-fills the form
+                            initialData={editingExpense}
                         />
                         <button onClick={() => setEditingExpense(null)} className="button-cancel-edit">Cancel Edit</button>
                     </div>
                 )}
             </div>
 
-            <h3>Your Expenses ({expenses.length})</h3>
+            <div className="list-header">
+                <h3>Your Expenses ({pagination ? pagination.totalCount : 0})</h3>
+                <div className="filter-controls">
+                    <label htmlFor="category-filter">Filter by Category:</label>
+                    <select 
+                        id="category-filter"
+                        value={filterCategory}
+                        onChange={(e) => {
+                            setFilterCategory(e.target.value);
+                            setCurrentPage(1); // Reset to page 1 when filter changes
+                        }}
+                    >
+                        <option value="">All Categories</option>
+                        <option value="Food">Food</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Office Supplies">Office Supplies</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3>Your Expenses ({pagination ? pagination.totalCount : 0})</h3>
+            
             {expenses.length === 0 && !isCreating ? (
                 <p>You have no expenses recorded yet. Click "Add New Expense" to start.</p>
             ) : (
@@ -139,6 +186,26 @@ const DashboardPage = () => {
                         </li>
                     ))}
                 </ul>
+            )}
+
+            {pagination && pagination.totalPages > 1 && (
+                <div className="pagination-controls">
+                    <button 
+                        onClick={() => setCurrentPage(currentPage - 1)} 
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </button>
+                    <span>
+                        Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                    <button 
+                        onClick={() => setCurrentPage(currentPage + 1)} 
+                        disabled={currentPage === pagination.totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
             )}
         </div>
     );
