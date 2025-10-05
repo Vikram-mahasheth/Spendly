@@ -9,6 +9,7 @@ const express = require('express');
 const connectDB = require('./config/database');
 const expenseRoutes = require('./routes/expenseRoutes');
 const authRoutes = require('./routes/authRoutes');
+
 const cors = require('cors');
 
 // Import dotenv to load environment variables from the .env file
@@ -34,12 +35,20 @@ const app = express();
 // Set the port for the server.
 // It tries to read the PORT environment variable (e.g., from .env)
 // and defaults to 5000 if the environment variable is not set.
-const PORT = process.env.PORT || 5000;
+const allowedOrigins = [
+  process.env.FRONTEND_URL, // your deployed frontend (e.g. https://expense-frontend.vercel.app)
+  'http://localhost:5173'   // local frontend (for dev)
+];
 
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 // Middleware (Basic setup - optional for this boilerplate)
 // This line allows Express to parse JSON bodies from incoming requests
 app.use(express.json());
+const PORT = process.env.PORT || 5000; // Default to port 5000 if not specified
 
 
 // =========================================================================
