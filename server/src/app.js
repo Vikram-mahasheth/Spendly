@@ -6,15 +6,18 @@
 
 // Import the Express framework
 const express = require('express');
-
 const connectDB = require('./config/database');
+const expenseRoutes = require('./routes/expenseRoutes');
+
+// Import dotenv to load environment variables from the .env file
+require('dotenv').config();
+
 
 // Connect to the database
 connectDB();
 
 
-// Import dotenv to load environment variables from the .env file
-require('dotenv').config();
+
 
 // =========================================================================
 // 2. Initialization and Configuration
@@ -48,6 +51,10 @@ app.get('/', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     });
 });
+
+app.use('/api/v1/expenses', expenseRoutes);
+
+
 
 // Example of a 404 handler (best practice for boilerplate)
 app.use((req, res) => {
