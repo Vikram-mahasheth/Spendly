@@ -1,10 +1,8 @@
 
-
-javascript
 // src/routes/expenseRoutes.js
 
 const express = require('express');
-
+const { protect } = require('../middleware/authMiddleware');
 // Import the controller functions
 const {
     createExpense,
@@ -25,20 +23,8 @@ const router = express.Router();
  * 
  * Base URL: /api/v1/expenses
  */
-router.route('/')
-    .post(createExpense)  // POST /api/v1/expenses -> createExpense
-    .get(getExpenses);    // GET /api/v1/expenses -> getExpenses
-
-/**
- * Routes that operate on a single expense resource (GET by ID, PUT, DELETE)
- * 
- * Base URL: /api/v1/expenses/:id
- */
-router.route('/:id')
-    // We didn't create a specific getExpenseById function, but the pattern is common:
-    // .get(getExpenseById) 
-    .put(updateExpense)    // PUT /api/v1/expenses/:id -> updateExpense
-    .delete(deleteExpense); // DELETE /api/v1/expenses/:id -> deleteExpense
+router.route('/').post(protect, createExpense).get(protect, getExpenses);//this line was edited to add protect middleware
+router.route('/:id').put(protect, updateExpense).delete(protect, deleteExpense);//same here 
 
 
 // Export the router to be used in app.js

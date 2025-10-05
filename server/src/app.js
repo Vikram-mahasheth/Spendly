@@ -8,6 +8,7 @@
 const express = require('express');
 const connectDB = require('./config/database');
 const expenseRoutes = require('./routes/expenseRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // Import dotenv to load environment variables from the .env file
 require('dotenv').config();
@@ -52,7 +53,12 @@ app.get('/', (req, res) => {
     });
 });
 
+// All expense-related routes will be prefixed with /api/v1/expenses
 app.use('/api/v1/expenses', expenseRoutes);
+
+// All authentication-related routes will be prefixed with /api/v1/auth
+app.use('/api/v1/auth', authRoutes);
+
 
 
 
