@@ -93,3 +93,23 @@
     border-radius: 5px;
     text-align: center;
 }
+
+/* Add this to the end of DashboardPage.css */
+
+.add-expense-section {
+    margin: 20px 0;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.button-toggle-form {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: block;
+    margin: 0 auto 20px auto; /* Center the button */
+}

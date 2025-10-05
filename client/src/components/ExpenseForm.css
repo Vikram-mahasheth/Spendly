@@ -1,0 +1,69 @@
+/* client/src/components/ExpenseForm.css */
+
+.expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 500px; /* Wider for better layout */
+    margin: 30px auto; /* More margin from the top */
+    padding: 25px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #333;
+}
+
+.expense-form input,
+.expense-form select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.amount-group {
+    display: flex;
+    gap: 15px;
+}
+
+.form-group-half {
+    flex: 1; /* Each takes up half the space */
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group-half label {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #333;
+}
+
+.button {
+    padding: 12px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.button:hover {
+    background-color: #218838;
+}

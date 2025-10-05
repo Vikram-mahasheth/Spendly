@@ -11,6 +11,11 @@ const CATEGORY_ENUM = ['Food', 'Travel', 'Office Supplies', 'Other'];
 
 const ExpenseSchema = new mongoose.Schema({
     // 1. description: Required String
+    user: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User', // This links it to the User model
+        required: true
+    },
     description: {
         type: String,
         required: [true, 'Description is required.'],

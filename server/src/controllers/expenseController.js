@@ -18,7 +18,8 @@ exports.createExpense = async (req, res) => {
             category,
             isReimbursable,
             baseAmount,
-            taxAmount
+            taxAmount,
+            user: req.user._id
         });
 
         // Respond with the newly created resource and 201 status
@@ -48,7 +49,7 @@ exports.getExpenses = async (req, res) => {
         // 1. Filtering Logic
         // -----------------------------
         
-        let query = {}; // Base query object
+        let query = { user: req.user._id }; // Base query object
 
         // Check for 'category' query parameter
         if (req.query.category) {
@@ -115,7 +116,8 @@ exports.getExpenses = async (req, res) => {
 exports.updateExpense = async (req, res) => {
     try {
         // Find the expense by ID from the URL parameters (req.params.id)
-        let expense = await Expense.findById(req.params.id);
+            let expense = await Expense.findOne({ _id: req.params.id, user: req.user._id });
+
 
         if (!expense) {
             return res.status(404).json({
@@ -128,14 +130,14 @@ exports.updateExpense = async (req, res) => {
         // { new: true } returns the updated document instead of the original.
         // { runValidators: true } ensures Mongoose runs the schema validators on the update data.
         expense = await Expense.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
+        new: true,
+        runValidators: true
+    });
 
-        res.status(200).json({
-            success: true,
-            data: expense
-        });
+    res.status(200).json({
+        success: true,
+        data: expense
+    });
 
     } catch (error) {
         // Handle CastError (invalid ID format) or Validation Errors
@@ -158,23 +160,23 @@ exports.updateExpense = async (req, res) => {
 exports.deleteExpense = async (req, res) => {
     try {
         // Find the expense by ID from the URL parameters
-        const expense = await Expense.findById(req.params.id);
+        const expense = await Expense.findOne({ _id: req.params.id, user: req.user._id });
 
-        if (!expense) {
-            return res.status(404).json({
-                success: false,
-                error: 'Expense not found'
-            });
-        }
+    if (!expense) {
+        // If no expense is found, it's either the wrong ID or the user is not the owner
+        return res.status(404).json({
+            success: false,
+            error: 'Expense not found'
+        });
+    }
 
-        // Delete the document
-        await expense.deleteOne(); 
+    // Now that we've confirmed ownership, delete it
+    await expense.deleteOne(); 
 
-        // Respond with 200 and a message (or 204 No Content for standard practice)
-        res.status(200).json({
-            success: true,
-            message: 'Expense deleted successfully',
-            data: {} // Return empty object for deleted resource
+    res.status(200).json({
+        success: true,
+        message: 'Expense deleted successfully',
+        data: {}
         });
 
     } catch (error) {
