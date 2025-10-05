@@ -1653,3 +1653,487 @@ export default DashboardPage;
 
 * **Implementation & Changes:**
     The generated code was implemented in `src/pages/DashboardPage.jsx`. It correctly used the `useAuth` hook and `useEffect` to manage the data fetching lifecycle. The AI's code also handled loading and error states gracefully, which is a key part of a good user experience. I also followed its lead to refactor the inline styles into a separate CSS file for better code quality.   
+
+
+    ## Prompt 13: Reusable React Form Component
+
+* **Prompt:**
+Hey Gemini, I need a reusable React component for an expense form. Please create the code for a new file at src/components/ExpenseForm.jsx.
+The form component should:
+Accept props: an onSubmit function to handle form submission and a buttonText string for the submit button (e.g., 'Add Expense').
+Use the useState hook to manage controlled inputs for description (text), baseAmount (number), taxAmount (number), and category (select/dropdown).
+The category dropdown should have options: 'Food', 'Travel', 'Office Supplies', 'Other'.
+When the form is submitted, it should call the onSubmit function from its props, passing the current form data as an object."
+
+* **Context:**
+    To handle the "Create" (and later, "Update") functionality for expenses, I wanted to build a single, reusable form component. This is a best practice in React to avoid duplicating code. This prompt was designed to generate that reusable form.
+
+* **Response from Gemini:**
+    This ExpenseForm component is a reusable, controlled form that isolates the input logic, making it easy to integrate into different parts of your application (for creation or editing).
+
+1. Expense Form Component (src/components/ExpenseForm.jsx)
+Create the file src/components/ExpenseForm.jsx and add the following code:
+
+// src/components/ExpenseForm.jsx
+
+import React, { useState } from 'react';
+
+const CATEGORY_OPTIONS = ['Food', 'Travel', 'Office Supplies', 'Other'];
+
+/**
+ * Reusable form component for creating or editing an expense.
+ * 
+ * @param {object} props
+ * @param {function} props.onSubmit - Function to handle form submission with data.
+ * @param {string} props.buttonText - Text displayed on the submit button.
+ * @param {object} props.initialData - Optional object to pre-fill form fields.
+ */
+const ExpenseForm = ({ onSubmit, buttonText, initialData = {} }) => {
+  
+  // Initialize state with initialData or defaults
+  const [description, setDescription] = useState(initialData.description || '');
+  const [baseAmount, setBaseAmount] = useState(initialData.baseAmount || 0);
+  const [taxAmount, setTaxAmount] = useState(initialData.taxAmount || 0);
+  const [category, setCategory] = useState(initialData.category || CATEGORY_OPTIONS[0]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Parse amounts as numbers before submission
+    const expenseData = {
+      description,
+      baseAmount: parseFloat(baseAmount),
+      taxAmount: parseFloat(taxAmount),
+      category,
+      // isReimbursable is excluded for simplicity but could be added here
+    };
+
+    // Call the parent component's onSubmit function with the collected data
+    onSubmit(expenseData);
+    
+    // Optional: Clear form after successful submission
+    // setDescription('');
+    // setBaseAmount(0);
+    // setTaxAmount(0);
+    // setCategory(CATEGORY_OPTIONS[0]);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={styles.form}>
+      <div style={styles.formGroup}>
+        <label htmlFor="description">Description (Required)</label>
+        <input
+          id="description"
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+      </div>
+
+      <div style={styles.formGroup}>
+        <label htmlFor="category">Category</label>
+        <select
+          id="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          required
+        >
+          {CATEGORY_OPTIONS.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      </div>
+
+      <div style={styles.amountGroup}>
+        <div style={styles.formGroupHalf}>
+          <label htmlFor="baseAmount">Base Amount ($)</label>
+          <input
+            id="baseAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            value={baseAmount}
+            onChange={(e) => setBaseAmount(e.target.value)}
+            required
+          />
+        </div>
+
+        <div style={styles.formGroupHalf}>
+          <label htmlFor="taxAmount">Tax Amount ($)</label>
+          <input
+            id="taxAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            value={taxAmount}
+            onChange={(e) => setTaxAmount(e.target.value)}
+            required
+          />
+        </div>
+      </div>
+
+      <button type="submit" style={styles.button}>
+        {buttonText || 'Submit'}
+      </button>
+    </form>
+  );
+};
+
+// Simple inline styles
+const styles = {
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        maxWidth: '400px',
+        margin: '20px auto',
+        padding: '20px',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+    },
+    formGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    amountGroup: {
+        display: 'flex',
+        gap: '10px',
+    },
+    formGroupHalf: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    button: {
+        padding: '10px',
+        backgroundColor: '#28a745',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        marginTop: '10px',
+    },
+    // Optional basic input styling
+    'input, select': {
+        padding: '8px',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        marginTop: '5px',
+    }
+};
+
+export default ExpenseForm;
+
+
+* **Implementation & Changes:**
+    The AI-generated code was a great starting point. I implemented it in `src/components/ExpenseForm.jsx`. I then performed two refactoring steps: first, I moved the inline styles to a separate `ExpenseForm.css` file. Second, I had to debug an issue where the initial state was being reset on every render; I fixed this by simplifying the `useState` initialization and removing a buggy `useEffect` hook. The final component is now clean, reusable, and correctly manages its state.
+
+
+## Prompt 14: Implementing Full CRUD UI Functionality
+
+* **Prompt:**
+    (This feature was built with two main prompts)
+1. **For the Form:** "Hey Gemini, I need a reusable React component for an expense form. Please create the code for a new file at `src/components/ExpenseForm.jsx`..."
+ 2. **For the API Service:** "Hey Gemini, I need to add update and delete functions to my API service file at src/services/api.js. Please add two new exported async functions:
+updateExpense(id, expenseData, token): should make a PUT request to /expenses/:id with the expenseData in the body.
+deleteExpense(id, token): should make a DELETE request to /expenses/:id. Both functions must be protected by including the Authorization header with the bearer token."
+
+* **Context:**
+    With the dashboard displaying the expenses (Read), the next logical step was to implement the remaining C-U-D (Create, Update, Delete) functionality in the UI. This required a reusable form component and new functions in my API service file to handle the `PUT` and `DELETE` requests.
+
+* **Response from Gemini:**
+    1This ExpenseForm component is a reusable, controlled form that isolates the input logic, making it easy to integrate into different parts of your application (for creation or editing).
+
+1. Expense Form Component (src/components/ExpenseForm.jsx)
+Create the file src/components/ExpenseForm.jsx and add the following code:
+
+// src/components/ExpenseForm.jsx
+
+import React, { useState } from 'react';
+
+const CATEGORY_OPTIONS = ['Food', 'Travel', 'Office Supplies', 'Other'];
+
+/**
+ * Reusable form component for creating or editing an expense.
+ * 
+ * @param {object} props
+ * @param {function} props.onSubmit - Function to handle form submission with data.
+ * @param {string} props.buttonText - Text displayed on the submit button.
+ * @param {object} props.initialData - Optional object to pre-fill form fields.
+ */
+const ExpenseForm = ({ onSubmit, buttonText, initialData = {} }) => {
+  
+  // Initialize state with initialData or defaults
+  const [description, setDescription] = useState(initialData.description || '');
+  const [baseAmount, setBaseAmount] = useState(initialData.baseAmount || 0);
+  const [taxAmount, setTaxAmount] = useState(initialData.taxAmount || 0);
+  const [category, setCategory] = useState(initialData.category || CATEGORY_OPTIONS[0]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Parse amounts as numbers before submission
+    const expenseData = {
+      description,
+      baseAmount: parseFloat(baseAmount),
+      taxAmount: parseFloat(taxAmount),
+      category,
+      // isReimbursable is excluded for simplicity but could be added here
+    };
+
+    // Call the parent component's onSubmit function with the collected data
+    onSubmit(expenseData);
+    
+    // Optional: Clear form after successful submission
+    // setDescription('');
+    // setBaseAmount(0);
+    // setTaxAmount(0);
+    // setCategory(CATEGORY_OPTIONS[0]);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={styles.form}>
+      <div style={styles.formGroup}>
+        <label htmlFor="description">Description (Required)</label>
+        <input
+          id="description"
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+      </div>
+
+      <div style={styles.formGroup}>
+        <label htmlFor="category">Category</label>
+        <select
+          id="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          required
+        >
+          {CATEGORY_OPTIONS.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      </div>
+
+      <div style={styles.amountGroup}>
+        <div style={styles.formGroupHalf}>
+          <label htmlFor="baseAmount">Base Amount ($)</label>
+          <input
+            id="baseAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            value={baseAmount}
+            onChange={(e) => setBaseAmount(e.target.value)}
+            required
+          />
+        </div>
+
+        <div style={styles.formGroupHalf}>
+          <label htmlFor="taxAmount">Tax Amount ($)</label>
+          <input
+            id="taxAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            value={taxAmount}
+            onChange={(e) => setTaxAmount(e.target.value)}
+            required
+          />
+        </div>
+      </div>
+
+      <button type="submit" style={styles.button}>
+        {buttonText || 'Submit'}
+      </button>
+    </form>
+  );
+};
+
+// Simple inline styles
+const styles = {
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        maxWidth: '400px',
+        margin: '20px auto',
+        padding: '20px',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+    },
+    formGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    amountGroup: {
+        display: 'flex',
+        gap: '10px',
+    },
+    formGroupHalf: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    button: {
+        padding: '10px',
+        backgroundColor: '#28a745',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        marginTop: '10px',
+    },
+    // Optional basic input styling
+    'input, select': {
+        padding: '8px',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        marginTop: '5px',
+    }
+};
+
+export default ExpenseForm;
+
+2.I will update src/services/api.js to include the updateExpense and deleteExpense functions, ensuring they handle authorization correctly and use the provided expense ID.
+
+1. Updated API Service File (src/services/api.js)
+Here is the complete and updated content for src/services/api.js:
+
+// src/services/api.js
+
+import axios from 'axios';
+
+// ---------------------------------------------------------------------
+// 1. Axios Instance Configuration
+// ---------------------------------------------------------------------
+
+const api = axios.create({
+  baseURL: 'http://localhost:8080/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// ---------------------------------------------------------------------
+// 2. Authentication Functions
+// ---------------------------------------------------------------------
+
+/**
+ * Logs in a user.
+ * @param {object} credentials - { username, password }
+ */
+export const loginUser = async (credentials) => {
+  try {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  } catch (error) {
+    // Re-throw error to be handled by the component
+    throw error.response ? error.response.data : error;
+  }
+};
+
+/**
+ * Registers a new user.
+ * @param {object} userData - { username, password }
+ */
+export const registerUser = async (userData) => {
+  try {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+
+// ---------------------------------------------------------------------
+// 3. Expense Functions (CRUD)
+// ---------------------------------------------------------------------
+
+/**
+ * Fetches expenses from the API, optionally applying filtering/pagination.
+ * @param {string} token - The user's JWT.
+ * @param {object} params - Optional query parameters ({ category, page, limit })
+ */
+export const fetchExpenses = async (token, params = {}) => {
+  try {
+    const response = await api.get('/expenses', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: params,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+/**
+ * Creates a new expense record.
+ * @param {object} expenseData - The expense object to be created.
+ * @param {string} token - The user's JWT.
+ */
+export const createExpense = async (expenseData, token) => {
+  try {
+    const response = await api.post('/expenses', expenseData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+/**
+ * UPDATES an existing expense record.
+ * @param {string} id - The ID of the expense to update.
+ * @param {object} expenseData - The updated data.
+ * @param {string} token - The user's JWT.
+ */
+export const updateExpense = async (id, expenseData, token) => {
+  try {
+    const response = await api.put(`/expenses/${id}`, expenseData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+/**
+ * DELETES an expense record.
+ * @param {string} id - The ID of the expense to delete.
+ * @param {string} token - The user's JWT.
+ */
+export const deleteExpense = async (id, token) => {
+  try {
+    const response = await api.delete(`/expenses/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data; // Usually returns a success message
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+
+
+
+* **Implementation & Changes:**
+    I implemented the reusable `ExpenseForm.jsx` and integrated it into the `DashboardPage`. I used React state (`isCreating`, `editingExpense`) to conditionally render the form for either creating a new expense or editing an existing one. For editing, I passed the `initialData` prop to the form to pre-fill the fields. I also added `updateExpense` and `deleteExpense` to my `api.js` file and created handler functions in the dashboard to call them, re-fetching the expense list on success to keep the UI in sync with the database. This completed the full CRUD cycle on the frontend.    
+
+
+

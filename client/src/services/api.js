@@ -6,7 +6,6 @@ import axios from 'axios';
 // 1. Axios Instance Configuration
 // ---------------------------------------------------------------------
 
-// Create an Axios instance with the base URL for the Express API
 const api = axios.create({
   baseURL: 'http://localhost:8080/api/v1',
   headers: {
@@ -47,7 +46,7 @@ export const registerUser = async (userData) => {
 
 
 // ---------------------------------------------------------------------
-// 3. Expense Functions
+// 3. Expense Functions (CRUD)
 // ---------------------------------------------------------------------
 
 /**
@@ -59,10 +58,9 @@ export const fetchExpenses = async (token, params = {}) => {
   try {
     const response = await api.get('/expenses', {
       headers: {
-        // Set the Authorization header for protected routes
         Authorization: `Bearer ${token}`,
       },
-      params: params, // Axios will convert this object into query parameters (?category=...)
+      params: params,
     });
     return response.data;
   } catch (error) {
@@ -83,6 +81,43 @@ export const createExpense = async (expenseData, token) => {
       },
     });
     return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+/**
+ * UPDATES an existing expense record.
+ * @param {string} id - The ID of the expense to update.
+ * @param {object} expenseData - The updated data.
+ * @param {string} token - The user's JWT.
+ */
+export const updateExpense = async (id, expenseData, token) => {
+  try {
+    const response = await api.put(`/expenses/${id}`, expenseData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+/**
+ * DELETES an expense record.
+ * @param {string} id - The ID of the expense to delete.
+ * @param {string} token - The user's JWT.
+ */
+export const deleteExpense = async (id, token) => {
+  try {
+    const response = await api.delete(`/expenses/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data; // Usually returns a success message
   } catch (error) {
     throw error.response ? error.response.data : error;
   }
