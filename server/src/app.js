@@ -9,6 +9,7 @@ const express = require('express');
 const connectDB = require('./config/database');
 const expenseRoutes = require('./routes/expenseRoutes');
 const authRoutes = require('./routes/authRoutes');
+const cors = require('cors');
 
 // Import dotenv to load environment variables from the .env file
 require('dotenv').config();
@@ -25,13 +26,17 @@ connectDB();
 // =========================================================================
 
 // Initialize the Express application
+
+
 const app = express();
+
 
 // Set the port for the server.
 // It tries to read the PORT environment variable (e.g., from .env)
 // and defaults to 5000 if the environment variable is not set.
 const PORT = process.env.PORT || 5000;
 
+app.use(cors());
 // Middleware (Basic setup - optional for this boilerplate)
 // This line allows Express to parse JSON bodies from incoming requests
 app.use(express.json());

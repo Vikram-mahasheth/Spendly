@@ -1318,3 +1318,338 @@ exports.getExpenses = async (req, res) => {
 
 * **Implementation & Changes:**
     I replaced my old controller function with this new one. The AI's solution was very comprehensive. It correctly handled default values for page and limit, built a dynamic query object for filtering, and used `countDocuments` to provide accurate pagination metadata like `totalPages`. This is a much more powerful and user-friendly API endpoint now.
+
+
+
+## Prompt 11: React Login Page Component
+
+* **Prompt:**
+Hey Gemini, I'm using React and react-router-dom, and I have an API service file at src/services/api.js. Please write the code for a new React component for my login page, to be saved at src/pages/LoginPage.jsx. The component must:
+Be a functional component using React hooks.Use the useState hook to manage username, password, error, and loading states.Render a form that calls a handleLogin function on submit. The form should have inputs for username and password, and a submit button.The handleLogin function must call the loginUser function from ../services/api.js.After a successful login, it should console.log the user data and token. For now, it should not redirect.If there is a login error, it should store the error message in the error state and display it on the screen.Disable the submit button when the form is submitting (i.e., when loading is true)."
+
+* **Context:**
+    This was the first major UI component for the application. The goal was to create a functional login form that could handle user input, communicate with the backend API service I created earlier, and provide clear feedback to the user (loading states and error messages).
+
+* **Response from Gemini:**
+    This React component provides a functional login form that handles state, communicates with the backend API, manages loading state, and displays errors effectively.
+
+1. Login Page Component (src/pages/LoginPage.jsx)
+Create the file src/pages/LoginPage.jsx and add the following content:
+
+// src/pages/LoginPage.jsx
+
+import React, { useState } from 'react';
+import { loginUser } from '../services/api'; // Import the loginUser function
+
+const LoginPage = () => {
+  // State management for form inputs
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // State management for UI feedback
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleLogin = async (e) => {
+    e.preventDefault(); // Prevent default form submission behavior
+    
+    // Reset previous error and set loading state
+    setError(null);
+    setLoading(true);
+
+    try {
+      // 1. Call the API service
+      const response = await loginUser({ username, password });
+
+      // 2. Successful Login
+      // The response structure is expected to be { success: true, message: 'Login successful', data: { _id, username, token } }
+      const { data } = response;
+      
+      // Log the data for verification (per requirement)
+      console.log('Login Successful!', data);
+      console.log('User ID:', data._id);
+      console.log('JWT Token:', data.token);
+
+      // --- TODO: In a real app, you would store the token (e.g., in localStorage or Context) 
+      // --- and redirect the user here.
+
+    } catch (err) {
+      // 3. Handle Errors
+      console.error('Login Error:', err);
+      // Assuming the API error structure has a 'message' field
+      const errorMessage = err.message || 'An unknown error occurred during login.';
+      setError(errorMessage);
+
+    } finally {
+      // 4. Reset loading state
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <h2>User Login</h2>
+      
+      {/* Display error message if present */}
+      {error && <p style={styles.error}>{error}</p>}
+
+      <form onSubmit={handleLogin} style={styles.form}>
+        <div style={styles.formGroup}>
+          <label htmlFor="username">Username:</label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div style={styles.formGroup}>
+          <label htmlFor="password">Password:</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <button 
+          type="submit" 
+          disabled={loading} 
+          style={styles.button}
+        >
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+// Simple inline styles for readability (replace with proper CSS/styling library)
+const styles = {
+    container: {
+        maxWidth: '400px',
+        margin: '50px auto',
+        padding: '20px',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        textAlign: 'center',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+    },
+    formGroup: {
+        textAlign: 'left',
+    },
+    error: {
+        color: 'red',
+        marginBottom: '15px',
+        border: '1px solid red',
+        padding: '10px',
+        borderRadius: '4px',
+    },
+    button: {
+        padding: '10px',
+        backgroundColor: '#007bff',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+    }
+};
+
+export default LoginPage;
+
+* **Implementation & Changes:**
+    The generated code was excellent and implemented in `src/pages/LoginPage.jsx`. It correctly used `useState` for state management and `async/await` for the API call. After implementing it, I also did a refactoring step (prompted separately) to move the inline styles into a dedicated `LoginPage.css` file, which improved the code's organization. The logic was later updated to use the `useAuth` hook instead of `useContext` directly.
+
+
+ ## Prompt 12: React Dashboard Page Component
+
+* **Prompt:**
+"Gemini, please write the code for my main dashboard page at src/pages/DashboardPage.jsx. This component must:
+Use the useAuth custom hook from my AuthContext to get the current user's information and token.Use useState to manage expenses, loading, and error states.Use the useEffect hook to call the fetchExpenses function from my api.js service as soon as the component loads. It must pass the token to this function.Render a welcome message, like 'Welcome, [username]!'.Display a list of the expenses. For each expense, show its description, category, and totalAmount.While the data is being fetched, it should display a "Loading expenses..." message.If there's an error fetching the data, it should display an error message.Include a 'Logout' button that, when clicked, calls the logout function from the useAuth hook."
+
+
+
+* **Context:**
+    This prompt was for the main page of the application that users see after logging in. The goal was to create a component that securely fetches and displays protected data (the user's expenses) by using the JWT token managed by the `AuthContext`. It also needed to include a logout function.
+
+* **Response from Gemini:**
+    This DashboardPage component demonstrates how to securely fetch protected data using the stored JWT, handle various loading and error states, and manage the user session via the AuthContext.
+
+1. Dashboard Component (src/pages/DashboardPage.jsx)
+Create the file src/pages/DashboardPage.jsx and add the following content:
+
+// src/pages/DashboardPage.jsx
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { fetchExpenses } from '../services/api';
+
+const DashboardPage = () => {
+  // Use the custom hook to access authentication state and functions
+  const { user, token, logout } = useAuth();
+
+  // State for expenses data and UI feedback
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ---------------------------------------------------------------------
+  // Data Fetching Hook
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    // Ensure we have a token before trying to fetch protected data
+    if (!token) {
+        setLoading(false);
+        setError("Authentication token not found. Please log in.");
+        return;
+    }
+    
+    const loadExpenses = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch expenses using the token for authorization
+        // We can pass optional query parameters here if needed, e.g., { page: 1, limit: 10 }
+        const response = await fetchExpenses(token); 
+        
+        // The API returns the expenses in the 'data' field of the response
+        setExpenses(response.data); 
+      } catch (err) {
+        console.error('Error fetching expenses:', err);
+        // Assuming the error structure has a 'message' field
+        const errorMessage = err.message || 'Failed to load expense data.';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExpenses();
+  }, [token]); // Dependency array: Re-run effect if the token changes
+
+  // ---------------------------------------------------------------------
+  // Render Logic
+  // ---------------------------------------------------------------------
+
+  // Display loading state
+  if (loading) {
+    return <div style={styles.container}><h2>Loading expenses...</h2></div>;
+  }
+
+  // Display error state
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <h2 style={styles.error}>Error: {error}</h2>
+      </div>
+    );
+  }
+  
+  // Safety check: Should not happen if AuthProvider handles initial load correctly
+  if (!user) {
+    return <div style={styles.container}><h2>Please log in to view the dashboard.</h2></div>;
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1>Welcome, {user.username}!</h1>
+        <button onClick={logout} style={styles.logoutButton}>
+          Logout
+        </button>
+      </div>
+
+      <hr style={styles.divider} />
+      
+      <h3>Your Expenses ({expenses.length})</h3>
+
+      {expenses.length === 0 ? (
+        <p>You have no expenses recorded yet.</p>
+      ) : (
+        <ul style={styles.expenseList}>
+          {expenses.map((expense) => (
+            <li key={expense._id} style={styles.expenseItem}>
+              <div style={styles.itemDetail}>
+                <strong>{expense.description}</strong>
+                <span style={styles.categoryBadge}>{expense.category}</span>
+              </div>
+              <div style={styles.amount}>
+                ${(expense.baseAmount + expense.taxAmount).toFixed(2)}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+// Simple inline styles
+const styles = {
+    container: {
+        maxWidth: '800px',
+        margin: '50px auto',
+        padding: '20px',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+    },
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    logoutButton: {
+        padding: '8px 15px',
+        backgroundColor: '#dc3545',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+    },
+    divider: {
+        margin: '20px 0',
+        borderColor: '#eee',
+    },
+    expenseList: {
+        listStyle: 'none',
+        padding: 0,
+    },
+    expenseItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px',
+        borderBottom: '1px solid #eee',
+    },
+    itemDetail: {
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    categoryBadge: {
+        fontSize: '0.8em',
+        color: '#666',
+        marginTop: '3px',
+    },
+    amount: {
+        fontWeight: 'bold',
+        fontSize: '1.1em',
+    },
+    error: {
+        color: 'red',
+    }
+};
+
+export default DashboardPage;
+
+* **Implementation & Changes:**
+    The generated code was implemented in `src/pages/DashboardPage.jsx`. It correctly used the `useAuth` hook and `useEffect` to manage the data fetching lifecycle. The AI's code also handled loading and error states gracefully, which is a key part of a good user experience. I also followed its lead to refactor the inline styles into a separate CSS file for better code quality.   
