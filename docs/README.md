@@ -2,7 +2,7 @@ Expense Tracker - AI Campus Assignment
 A full-stack web application that allows users to register, log in, and manage their personal expenses in a secure, multi-user environment. Developed within a 24-hour timeframe with the assistance of an AI programming partner.
 
 🚀 Live Demo
-[Link to your deployed application will go here]
+https://spendly-blush.vercel.app/login
 
 ✨ Features
 🔐 Secure Authentication: Full user registration and login system using JWT for session management.
@@ -42,7 +42,7 @@ Prerequisites:
 
 1. Clone the Repository
 # Clone your repository
-git clone [YOUR_GITHUB_REPOSITORY_URL_HERE]
+git clone https://github.com/Vikram-mahasheth/Spendly
 
 # Navigate into the project directory
 cd ai-campus-project
