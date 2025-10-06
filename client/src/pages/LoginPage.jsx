@@ -12,8 +12,8 @@ const LoginPage = () => {
     const navigate = useNavigate();
     const { login } = useAuth(); // <-- CORRECT: We call the custom hook to get the login function
     
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('testuser2');
+    const [password, setPassword] = useState('password123');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
